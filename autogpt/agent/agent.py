@@ -93,12 +93,14 @@ class Agent:
                     if key == "thoughts":
                         assistant_reply_json["thoughts"]["text"] = value
                     elif key == "plan":
+                        if type(value) is not list:
+                            value = []
                         assistant_reply_json["thoughts"]["plan"] = "\n".join(
                             [f"- {str(p)}" for p in value]
                         )
                     elif key == "command":
                         assistant_reply_json["command"]["name"] = value
-                    elif key == "args":
+                    elif key == "args" and value is not None:
                         assistant_reply_json["command"]["args"] = value
                     else:
                         assistant_reply_json["thoughts"][key] = value
