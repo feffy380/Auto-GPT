@@ -98,10 +98,8 @@ class Agent:
                         )
                     elif key == "command":
                         assistant_reply_json["command"]["name"] = value
-                    elif key.startswith("args."):
-                        assistant_reply_json["command"]["args"][
-                            key.lstrip("args.")
-                        ] = value
+                    elif key == "args":
+                        assistant_reply_json["command"]["args"] = value
                     else:
                         assistant_reply_json["thoughts"][key] = value
             except:

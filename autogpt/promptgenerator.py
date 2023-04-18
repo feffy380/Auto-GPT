@@ -54,8 +54,10 @@ class PromptGenerator:
             "criticism": "constructive self-criticism",
             "speak": "thoughts summary to say to user",
             "command": "command name",
-            "args.arg1": "value",
-            "args.arg2": "multiline\nvalue\n",
+            "args": {
+                "arg1": "value",
+                "arg2": "multiline\nvalue\n",
+            },
         }
 
     def add_constraint(self, constraint: str) -> None:
