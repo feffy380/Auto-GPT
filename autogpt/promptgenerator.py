@@ -4,6 +4,23 @@ from __future__ import annotations
 import json
 from typing import Any
 
+import yaml
+
+
+def str_presenter(dumper, data):
+    """configures yaml for dumping multiline strings
+    Ref: https://stackoverflow.com/questions/8640959/how-can-i-control-what-scalar-form-pyyaml-uses-for-my-data
+    """
+    if data.count("\n") > 0:  # check for multiline string
+        return dumper.represent_scalar("tag:yaml.org,2002:str", data, style="|")
+    return dumper.represent_scalar("tag:yaml.org,2002:str", data)
+
+
+yaml.add_representer(str, str_presenter)
+yaml.representer.SafeRepresenter.add_representer(
+    str, str_presenter
+)  # to use with safe_dump
+
 
 class PromptGenerator:
     """
@@ -29,6 +46,16 @@ class PromptGenerator:
                 "speak": "thoughts summary to say to user",
             },
             "command": {"name": "command name", "args": {"arg name": "value"}},
+        }
+        self.yaml_response_format = {
+            "thoughts": "thought",
+            "reasoning": "reasoning",
+            "plan": ["short bulleted list that", "conveys long-term plans"],
+            "criticism": "constructive self-criticism",
+            "speak": "thoughts summary to say to user",
+            "command": "command name",
+            "args.arg1": "value",
+            "args.arg2": "multiline\nvalue\n",
         }
 
     def add_constraint(self, constraint: str) -> None:
@@ -124,7 +151,21 @@ class PromptGenerator:
         Returns:
             str: The generated prompt string.
         """
-        formatted_response_format = json.dumps(self.response_format, indent=4)
+        # formatted_response_format = json.dumps(self.response_format, indent=4)
+        # return (
+        #     f"Constraints:\n{self._generate_numbered_list(self.constraints)}\n\n"
+        #     "Commands:\n"
+        #     f"{self._generate_numbered_list(self.commands, item_type='command')}\n\n"
+        #     f"Resources:\n{self._generate_numbered_list(self.resources)}\n\n"
+        #     "Performance Evaluation:\n"
+        #     f"{self._generate_numbered_list(self.performance_evaluation)}\n\n"
+        #     "You should only respond in JSON format as described below \nResponse"
+        #     f" Format: \n{formatted_response_format} \nEnsure the response can be"
+        #     " parsed by Python json.loads"
+        # )
+        formatted_response_format = yaml.safe_dump(
+            self.yaml_response_format, default_flow_style=False, sort_keys=False
+        )
         return (
             f"Constraints:\n{self._generate_numbered_list(self.constraints)}\n\n"
             "Commands:\n"
@@ -132,7 +173,7 @@ class PromptGenerator:
             f"Resources:\n{self._generate_numbered_list(self.resources)}\n\n"
             "Performance Evaluation:\n"
             f"{self._generate_numbered_list(self.performance_evaluation)}\n\n"
-            "You should only respond in JSON format as described below \nResponse"
-            f" Format: \n{formatted_response_format} \nEnsure the response can be"
-            " parsed by Python json.loads"
+            "You should only respond in YAML format as described below \nResponse"
+            f" Format: \n```\n{formatted_response_format}\n```\nEnsure the response can be"
+            " parsed by Python yaml.load"
         )

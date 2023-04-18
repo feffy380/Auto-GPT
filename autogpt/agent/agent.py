@@ -1,3 +1,4 @@
+import yaml
 from colorama import Fore, Style
 
 from autogpt.app import execute_command, get_command
@@ -80,7 +81,38 @@ class Agent:
                     cfg.fast_token_limit,
                 )  # TODO: This hardcodes the model to use GPT3.5. Make this an argument
 
-            assistant_reply_json = fix_json_using_multiple_techniques(assistant_reply)
+            assistant_reply_json = {}
+            # assistant_reply_json = fix_json_using_multiple_techniques(assistant_reply)
+            # TODO(feffy380): try to fix malformed yaml, make yaml/json toggleable
+            try:
+                assistant_reply_yaml = yaml.safe_load(assistant_reply)
+                # map to json schema
+                assistant_reply_json["thoughts"] = {}
+                assistant_reply_json["command"] = {"args": {}}
+                for key, value in assistant_reply_yaml.items():
+                    if key == "thoughts":
+                        assistant_reply_json["thoughts"]["text"] = value
+                    elif key == "plan":
+                        assistant_reply_json["thoughts"]["plan"] = "\n".join(
+                            [f"- {str(p)}" for p in value]
+                        )
+                    elif key == "command":
+                        assistant_reply_json["command"]["name"] = value
+                    elif key.startswith("args."):
+                        assistant_reply_json["command"]["args"][
+                            key.lstrip("args.")
+                        ] = value
+                    else:
+                        assistant_reply_json["thoughts"][key] = value
+            except:
+                logger.error(
+                    "Error: The following AI output couldn't be converted to YAML:\n",
+                    assistant_reply,
+                )
+                if cfg.speak_mode:
+                    say_text(
+                        "I have received an invalid YAML response from the OpenAI API."
+                    )
 
             # Print Assistant thoughts
             if assistant_reply_json != {}:
@@ -116,7 +148,7 @@ class Agent:
                         Fore.MAGENTA + "Input:" + Style.RESET_ALL
                     )
                     if console_input.lower().strip() == "y":
-                        user_input = "GENERATE NEXT COMMAND JSON"
+                        user_input = "GENERATE NEXT COMMAND YAML"  # JSON
                         break
                     elif console_input.lower().strip() == "":
                         print("Invalid input format.")
@@ -126,7 +158,7 @@ class Agent:
                             self.next_action_count = abs(
                                 int(console_input.split(" ")[1])
                             )
-                            user_input = "GENERATE NEXT COMMAND JSON"
+                            user_input = "GENERATE NEXT COMMAND YAML"  # JSON
                         except ValueError:
                             print(
                                 "Invalid input format. Please enter 'y -n' where n is"
@@ -142,7 +174,7 @@ class Agent:
                         command_name = "human_feedback"
                         break
 
-                if user_input == "GENERATE NEXT COMMAND JSON":
+                if user_input == "GENERATE NEXT COMMAND YAML":  # JSON
                     logger.typewriter_log(
                         "-=-=-=-=-=-=-= COMMAND AUTHORISED BY USER -=-=-=-=-=-=-=",
                         Fore.MAGENTA,
