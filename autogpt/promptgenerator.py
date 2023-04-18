@@ -175,7 +175,7 @@ class PromptGenerator:
             f"Resources:\n{self._generate_numbered_list(self.resources)}\n\n"
             "Performance Evaluation:\n"
             f"{self._generate_numbered_list(self.performance_evaluation)}\n\n"
-            "You should only respond in YAML format as described below \nResponse"
-            f" Format: \n```\n{formatted_response_format}\n```\nEnsure the response can be"
+            "You MUST respond in YAML format as described below in the code block.\nResponse"
+            f" Format:\n```\n{formatted_response_format}\n```\nEnsure the response can be"
             " parsed by Python yaml.load"
         )
